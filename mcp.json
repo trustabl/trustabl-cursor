@@ -2,7 +2,8 @@
   "mcpServers": {
     "trustabl": {
       "command": "node",
-      "args": ["${PLUGIN_ROOT}/dist/index.js"],
+      "args": ["dist/index.js"],
+      "cwd": "${PLUGIN_ROOT}",
       "env": {
         "TRUSTABL_VERSION": "${TRUSTABL_VERSION}",
         "GITHUB_TOKEN": "${GITHUB_TOKEN}"

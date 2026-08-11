@@ -21269,6 +21269,8 @@ async function ensureTrustabl(requestedVersion) {
 // index.js
 var SARIF_FILE = "trustabl.sarif";
 var JSON_FILE = "trustabl.json";
+var REPORT_FILE = "trustabl-report.txt";
+var REPORT_EXCERPT_LINES = 40;
 var SEVERITY_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 var MAX_FINDINGS_RETURNED = 50;
 var MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
@@ -21276,12 +21278,33 @@ var log2 = (msg) => process.stderr.write(`[trustabl] ${msg}
 `);
 var textResult = (text, isError = false) => ({ content: [{ type: "text", text }], isError });
 function runScan(bin, target, { detectors, strict, sarifPath, jsonPath }) {
-  const args = ["scan", target, "--format", "json", "--sarif-out", sarifPath, "--json-out", jsonPath];
+  const args = ["scan", target, "--format", "human", "--sarif-out", sarifPath, "--json-out", jsonPath];
   if (detectors) args.push("--detectors", detectors);
   if (strict) args.push("--strict");
   const r = spawnSync2(bin, args, { maxBuffer: MAX_OUTPUT_BYTES, encoding: "utf8" });
   if (r.error) throw new Error(`Failed to run trustabl: ${r.error.message}`);
   return { stdout: r.stdout ?? "", code: r.status, stderr: r.stderr ?? "" };
+}
+var stripAnsi = (s) => s.replace(/\[[0-9;]*m/g, "");
+function reportExcerpt(report) {
+  const lines = report.split("\n");
+  if (lines.length <= REPORT_EXCERPT_LINES) return report;
+  return [
+    ...lines.slice(0, REPORT_EXCERPT_LINES),
+    "",
+    `... ${lines.length - REPORT_EXCERPT_LINES} more lines \u2014 full report in ${REPORT_FILE}`
+  ].join("\n");
+}
+function severityTable(bySeverity, total) {
+  const rows = ["critical", "high", "medium", "low", "info"].map((sev) => {
+    const n = bySeverity[sev] ?? 0;
+    const bar = "\u2588".repeat(total ? Math.round(n / total * 20) : 0);
+    return `| ${sev.padEnd(8)} | ${String(n).padStart(5)} | ${bar}`;
+  }).join("\n");
+  return `| severity | count | share
+|----------|-------|------
+${rows}
+| **total**| ${String(total).padStart(5)} |`;
 }
 function maxSeverity(findings) {
   return findings.reduce(
@@ -21324,9 +21347,9 @@ ${scan.stderr}`, true);
     }
     let result;
     try {
-      result = JSON.parse(scan.stdout);
+      result = JSON.parse(fs2.readFileSync(jsonPath, "utf8"));
     } catch {
-      return textResult(`trustabl produced no parseable JSON.
+      return textResult(`trustabl produced no parseable JSON report.
 ${scan.stderr}`, true);
     }
     const findings = result.findings ?? [];
@@ -21354,11 +21377,39 @@ ${scan.stderr}`, true);
       findings_returned: returned.length,
       findings_truncated: findings.length - returned.length
     };
+    const report = stripAnsi(scan.stdout).trimEnd();
+    const reportPath = path2.join(dir, REPORT_FILE);
+    try {
+      fs2.writeFileSync(reportPath, `${report}
+`);
+      summary.report_file = reportPath;
+    } catch (err) {
+      log2(`could not write ${REPORT_FILE}: ${err.message}`);
+    }
     return textResult(
-      `${JSON.stringify(summary, null, 2)}
-
-Findings (worst first):
-${JSON.stringify(returned, null, 2)}`
+      [
+        `## Trustabl scan \u2014 ${dir}`,
+        "",
+        `**Readiness ${readiness}/100** \xB7 risk ${100 - readiness} \xB7 ${findings.length} findings \xB7 max severity \`${summary.max_severity}\`` + (summary.gated ? " \xB7 **gated** (medium or higher)" : ""),
+        "",
+        severityTable(bySeverity, findings.length),
+        "",
+        "```",
+        reportExcerpt(report),
+        "```",
+        "",
+        `Reports written: \`${SARIF_FILE}\`, \`${JSON_FILE}\`, \`${REPORT_FILE}\``,
+        "",
+        `### Details`,
+        "```json",
+        JSON.stringify(summary, null, 2),
+        "```",
+        "",
+        `### Findings (worst first, ${returned.length} of ${findings.length})`,
+        "```json",
+        JSON.stringify(returned, null, 2),
+        "```"
+      ].join("\n")
     );
   }
 );

@@ -22,11 +22,11 @@ flowchart TD
     S --> B{"trustabl binary<br/>available?"}
     B -->|"on PATH"| SCAN
     B -->|"no"| D["Download release asset<br/>+ verify sha256<br/>cache in ~/.trustabl-cursor"]
-    D --> SCAN["<b>trustabl scan</b><br/>--format sarif · --format json"]
+    D --> SCAN["<b>trustabl scan</b><br/>single pass · --sarif-out · --json-out"]
 
-    SCAN --> R["Findings · readiness score<br/>severity breakdown"]
+    SCAN --> R["Report table · readiness score<br/>severity breakdown · findings"]
     R -->|"returned in the tool result"| A
-    R -->|"written to disk"| F["trustabl.sarif<br/>trustabl.json"]
+    R -->|"written to disk"| F["trustabl.sarif<br/>trustabl.json<br/>trustabl-report.txt"]
     F --> V["SARIF viewer /<br/>Problems panel"]
     A --> U
 
@@ -53,7 +53,7 @@ on first scan, then cached.
 
 | Tool | What it does |
 |---|---|
-| `trustabl_scan` | Scan a directory. Returns the readiness score, severity breakdown, and findings (worst first); writes `trustabl.sarif` + `trustabl.json` into the scanned directory. |
+| `trustabl_scan` | Scan a directory. Returns a severity table, the readiness score, the scan report, and findings (worst first); writes `trustabl.sarif`, `trustabl.json`, and `trustabl-report.txt` into the scanned directory. |
 | `trustabl_last_findings` | Return the SARIF from the previous scan without re-running it. |
 
 **`trustabl_scan` parameters** — all optional:
@@ -64,8 +64,26 @@ on first scan, then cached.
 | `detectors` | _(all)_ | Comma-separated SDK subset, e.g. `claude_sdk,openai_sdk,mcp`. |
 | `strict` | `false` | Report any finding, however minor. |
 
-Large scans return the worst 50 findings inline to keep the agent's context
-usable — the complete set is always in `trustabl.json` / `trustabl.sarif`.
+Large scans return the worst 50 findings inline, and the scan report is excerpted,
+to keep the agent's context usable — the complete set is always in
+`trustabl.json` / `trustabl.sarif` / `trustabl-report.txt`.
+
+Example of what comes back:
+
+```
+## Trustabl scan — /path/to/repo
+
+**Readiness 91/100** · risk 9 · 454 findings · max severity `high` · **gated**
+
+| severity | count | share
+|----------|-------|------
+| critical |     0 |
+| high     |    97 | ████
+| medium   |    24 | █
+| low      |   317 | ██████████████
+| info     |    16 | █
+| **total**|   454 |
+```
 
 ## Configuration
 
@@ -116,8 +134,8 @@ server. If the launch path failed to resolve, replace `${PLUGIN_ROOT}` in
 **"Could not resolve the latest trustabl release."** GitHub rate-limited the
 anonymous API call — set `GITHUB_TOKEN`, or pin `TRUSTABL_VERSION` to a tag.
 
-**Windows.** Supported (amd64). Extraction uses the built-in `tar`, present on
-Windows 10 build 17063 and later.
+**Windows.** Supported (amd64). The release `.zip` is unpacked with PowerShell's
+`Expand-Archive`; macOS and Linux use `tar`.
 
 ## License
 

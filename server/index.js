@@ -18,6 +18,9 @@ import { ensureTrustabl } from "./trustabl-bin.js";
 
 const SARIF_FILE = "trustabl.sarif";
 const JSON_FILE = "trustabl.json";
+const REPORT_FILE = "trustabl-report.txt";
+// Lines of the console report to embed in the reply; the rest stays in the file.
+const REPORT_EXCERPT_LINES = 40;
 const SEVERITY_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 // A large repo can produce hundreds of findings; sending them all would swamp
 // the agent's context. Return the worst ones and point at the files for the rest.
@@ -29,19 +32,49 @@ const log = (msg) => process.stderr.write(`[trustabl] ${msg}\n`);
 const textResult = (text, isError = false) => ({ content: [{ type: "text", text }], isError });
 
 /**
- * One scan pass that produces everything: the JSON report on stdout (which we
- * parse) plus both files on disk via --json-out/--sarif-out. Scanning is the
- * slow part, so running it once rather than once per format matters — a large
- * repo can otherwise take longer than an MCP client is willing to wait.
+ * One scan pass that produces everything: the human-readable report on stdout,
+ * plus the JSON and SARIF files via --json-out/--sarif-out. Scanning is the slow
+ * part, so running it once rather than once per format matters — a large repo can
+ * otherwise take longer than an MCP client is willing to wait.
  */
 function runScan(bin, target, { detectors, strict, sarifPath, jsonPath }) {
-  const args = ["scan", target, "--format", "json", "--sarif-out", sarifPath, "--json-out", jsonPath];
+  const args = ["scan", target, "--format", "human", "--sarif-out", sarifPath, "--json-out", jsonPath];
   if (detectors) args.push("--detectors", detectors);
   if (strict) args.push("--strict");
 
   const r = spawnSync(bin, args, { maxBuffer: MAX_OUTPUT_BYTES, encoding: "utf8" });
   if (r.error) throw new Error(`Failed to run trustabl: ${r.error.message}`);
   return { stdout: r.stdout ?? "", code: r.status, stderr: r.stderr ?? "" };
+}
+
+/** The console report is colored for a terminal; chat wants it plain. */
+// eslint-disable-next-line no-control-regex
+const stripAnsi = (s) => s.replace(/\[[0-9;]*m/g, "");
+
+/**
+ * The full console report enumerates every finding — hundreds of KB on a large
+ * repo, far more than belongs in a chat reply. Embed the summary at the top and
+ * leave the rest in trustabl-report.txt.
+ */
+function reportExcerpt(report) {
+  const lines = report.split("\n");
+  if (lines.length <= REPORT_EXCERPT_LINES) return report;
+  return [
+    ...lines.slice(0, REPORT_EXCERPT_LINES),
+    "",
+    `... ${lines.length - REPORT_EXCERPT_LINES} more lines — full report in ${REPORT_FILE}`,
+  ].join("\n");
+}
+
+function severityTable(bySeverity, total) {
+  const rows = ["critical", "high", "medium", "low", "info"]
+    .map((sev) => {
+      const n = bySeverity[sev] ?? 0;
+      const bar = "█".repeat(total ? Math.round((n / total) * 20) : 0);
+      return `| ${sev.padEnd(8)} | ${String(n).padStart(5)} | ${bar}`;
+    })
+    .join("\n");
+  return `| severity | count | share\n|----------|-------|------\n${rows}\n| **total**| ${String(total).padStart(5)} |`;
 }
 
 function maxSeverity(findings) {
@@ -105,9 +138,9 @@ server.registerTool(
 
     let result;
     try {
-      result = JSON.parse(scan.stdout);
+      result = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
     } catch {
-      return textResult(`trustabl produced no parseable JSON.\n${scan.stderr}`, true);
+      return textResult(`trustabl produced no parseable JSON report.\n${scan.stderr}`, true);
     }
 
     const findings = result.findings ?? [];
@@ -137,8 +170,42 @@ server.registerTool(
       findings_truncated: findings.length - returned.length,
     };
 
+    // Persist the console report too, so it can be read back or pasted into a ticket.
+    const report = stripAnsi(scan.stdout).trimEnd();
+    const reportPath = path.join(dir, REPORT_FILE);
+    try {
+      fs.writeFileSync(reportPath, `${report}\n`);
+      summary.report_file = reportPath;
+    } catch (err) {
+      log(`could not write ${REPORT_FILE}: ${err.message}`);
+    }
+
     return textResult(
-      `${JSON.stringify(summary, null, 2)}\n\nFindings (worst first):\n${JSON.stringify(returned, null, 2)}`
+      [
+        `## Trustabl scan — ${dir}`,
+        "",
+        `**Readiness ${readiness}/100** · risk ${100 - readiness} · ` +
+          `${findings.length} findings · max severity \`${summary.max_severity}\`` +
+          (summary.gated ? " · **gated** (medium or higher)" : ""),
+        "",
+        severityTable(bySeverity, findings.length),
+        "",
+        "```",
+        reportExcerpt(report),
+        "```",
+        "",
+        `Reports written: \`${SARIF_FILE}\`, \`${JSON_FILE}\`, \`${REPORT_FILE}\``,
+        "",
+        `### Details`,
+        "```json",
+        JSON.stringify(summary, null, 2),
+        "```",
+        "",
+        `### Findings (worst first, ${returned.length} of ${findings.length})`,
+        "```json",
+        JSON.stringify(returned, null, 2),
+        "```",
+      ].join("\n")
     );
   }
 );
