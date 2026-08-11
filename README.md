@@ -41,13 +41,21 @@ an unverified binary.
 
 ## Install
 
-### From the Cursor plugin directory
+Three ways, same result. Pick one.
+
+| | Best for |
+|---|---|
+| **1. Plugin directory** | Most people — one click, updates handled by Cursor. |
+| **2. Local plugin folder** | Trying it before it's published, or running a fork. |
+| **3. Plain MCP server** | Skipping the plugin system, or using a client other than Cursor. |
+
+### 1. From the Cursor plugin directory
 
 1. In Cursor, open **Customize** (Settings → the *"Plugins, MCPs, Skills and
    Rules have moved to Customize"* banner links there too).
 2. **Browse Marketplace** → search **Trustabl** → **Install**.
 
-### From this repo
+### 2. From this repo, as a local plugin
 
 Clone it into Cursor's local plugin folder and restart Cursor:
 
@@ -62,6 +70,31 @@ Copy-Item -Recurse trustabl-cursor "$HOME\.cursor\plugins\local\"
 Cursor auto-detects `.cursor-plugin/plugin.json` and `mcp.json`. No build step
 and no `npm install` — the server ships pre-bundled.
 
+### 3. As a plain MCP server
+
+Registers the server directly, bypassing the plugin system entirely. Clone the
+repo anywhere, then add it to `~/.cursor/mcp.json` (global) or
+`<your-project>/.cursor/mcp.json` (that project only), using the **absolute
+path** to the clone:
+
+```json
+{
+  "mcpServers": {
+    "trustabl": {
+      "command": "node",
+      "args": ["/absolute/path/to/trustabl-cursor/dist/index.js"]
+    }
+  }
+}
+```
+
+On Windows use forward slashes: `C:/Users/you/trustabl-cursor/dist/index.js`.
+Restart Cursor.
+
+The same block works in any MCP client — Claude Code, Windsurf, VS Code — since
+it is a standard stdio MCP server. Set `TRUSTABL_VERSION` / `GITHUB_TOKEN` under
+an `"env"` key here rather than in Cursor's plugin settings.
+
 ### Check it's working
 
 **Customize → Plugins → Trustabl Cursor.** Under **MCPs** you should see:
@@ -71,7 +104,8 @@ trustabl  ● 2 tools enabled
 ```
 
 A green dot means the server started. If it's red, open **Configure → Show
-Output** for the error (see [Troubleshooting](#troubleshooting)).
+Output** for the error (see [Troubleshooting](#troubleshooting)). With method 3
+the server appears under **Customize → MCPs** instead of under a plugin.
 
 Nothing else to set up: the `trustabl` binary is downloaded and sha256-verified
 on first scan, then cached in `~/.trustabl-cursor/`.
