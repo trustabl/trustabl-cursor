@@ -5,6 +5,7 @@
   "author": {
     "name": "Trustabl"
   },
+  "logo": "assets/logo.png",
   "homepage": "https://trustabl.ai",
   "repository": "https://github.com/trustabl/trustabl-cursor",
   "keywords": [
