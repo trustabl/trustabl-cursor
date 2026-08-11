@@ -21163,9 +21163,13 @@ import path from "node:path";
 var REPO = "trustabl/trustabl";
 var log = (msg) => process.stderr.write(`[trustabl] ${msg}
 `);
+var setting = (value) => {
+  const v = value?.trim();
+  return v && !/^\$\{[^}]*\}$/.test(v) ? v : void 0;
+};
 function ghHeaders() {
   const h = { "User-Agent": "trustabl-cursor-plugin" };
-  const token = process.env.GITHUB_TOKEN?.trim();
+  const token = setting(process.env.GITHUB_TOKEN);
   if (token) h.Authorization = `Bearer ${token}`;
   return h;
 }
@@ -21180,7 +21184,7 @@ function platformTarget() {
   return { osName, arch: assetArch, ext, exe };
 }
 function existingBinary() {
-  const override = process.env.TRUSTABL_BIN?.trim();
+  const override = setting(process.env.TRUSTABL_BIN);
   const candidates = override ? [override] : ["trustabl"];
   for (const bin of candidates) {
     const r = spawnSync(bin, ["--version"], { stdio: "ignore", shell: false });
@@ -21329,7 +21333,7 @@ server.registerTool(
     if (!fs2.existsSync(dir)) return textResult(`Path does not exist: ${dir}`, true);
     let bin;
     try {
-      bin = await ensureTrustabl(process.env.TRUSTABL_VERSION);
+      bin = await ensureTrustabl(setting(process.env.TRUSTABL_VERSION));
     } catch (err) {
       return textResult(`Could not install the trustabl binary: ${err.message}`, true);
     }

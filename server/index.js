@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 
-import { ensureTrustabl } from "./trustabl-bin.js";
+import { ensureTrustabl, setting } from "./trustabl-bin.js";
 
 const SARIF_FILE = "trustabl.sarif";
 const JSON_FILE = "trustabl.json";
@@ -115,7 +115,7 @@ server.registerTool(
 
     let bin;
     try {
-      bin = await ensureTrustabl(process.env.TRUSTABL_VERSION);
+      bin = await ensureTrustabl(setting(process.env.TRUSTABL_VERSION));
     } catch (err) {
       return textResult(`Could not install the trustabl binary: ${err.message}`, true);
     }

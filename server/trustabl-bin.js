@@ -16,9 +16,19 @@ import path from "node:path";
 const REPO = "trustabl/trustabl";
 const log = (msg) => process.stderr.write(`[trustabl] ${msg}\n`);
 
+/**
+ * Optional settings arrive as ${VAR} placeholders that the host substitutes.
+ * A host that leaves an unset one unsubstituted would hand us the literal
+ * "${TRUSTABL_VERSION}" — treat that as "not set" rather than as a version tag.
+ */
+export const setting = (value) => {
+  const v = value?.trim();
+  return v && !/^\$\{[^}]*\}$/.test(v) ? v : undefined;
+};
+
 function ghHeaders() {
   const h = { "User-Agent": "trustabl-cursor-plugin" };
-  const token = process.env.GITHUB_TOKEN?.trim();
+  const token = setting(process.env.GITHUB_TOKEN);
   if (token) h.Authorization = `Bearer ${token}`;
   return h;
 }
@@ -40,7 +50,7 @@ function platformTarget() {
 
 /** Returns the path if `trustabl` already runs on this machine, else null. */
 function existingBinary() {
-  const override = process.env.TRUSTABL_BIN?.trim();
+  const override = setting(process.env.TRUSTABL_BIN);
   const candidates = override ? [override] : ["trustabl"];
   for (const bin of candidates) {
     const r = spawnSync(bin, ["--version"], { stdio: "ignore", shell: false });
