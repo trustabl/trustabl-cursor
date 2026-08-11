@@ -41,13 +41,74 @@ an unverified binary.
 
 ## Install
 
-**From Cursor:** search for **Trustabl** in the plugin directory and install it.
+### From the Cursor plugin directory
 
-**From this repo:** clone it and point Cursor at the folder (Cursor auto-detects
-the `.cursor-plugin/plugin.json` manifest and `mcp.json`).
+1. In Cursor, open **Customize** (Settings → the *"Plugins, MCPs, Skills and
+   Rules have moved to Customize"* banner links there too).
+2. **Browse Marketplace** → search **Trustabl** → **Install**.
+
+### From this repo
+
+Clone it into Cursor's local plugin folder and restart Cursor:
+
+```bash
+git clone https://github.com/trustabl/trustabl-cursor.git
+# macOS / Linux
+cp -r trustabl-cursor ~/.cursor/plugins/local/
+# Windows (PowerShell)
+Copy-Item -Recurse trustabl-cursor "$HOME\.cursor\plugins\local\"
+```
+
+Cursor auto-detects `.cursor-plugin/plugin.json` and `mcp.json`. No build step
+and no `npm install` — the server ships pre-bundled.
+
+### Check it's working
+
+**Customize → Plugins → Trustabl Cursor.** Under **MCPs** you should see:
+
+```
+trustabl  ● 2 tools enabled
+```
+
+A green dot means the server started. If it's red, open **Configure → Show
+Output** for the error (see [Troubleshooting](#troubleshooting)).
 
 Nothing else to set up: the `trustabl` binary is downloaded and sha256-verified
-on first scan, then cached.
+on first scan, then cached in `~/.trustabl-cursor/`.
+
+## Using it in chat
+
+Open the repo you want to check, start a chat (`Ctrl/Cmd + L`), and ask for a
+scan in plain language:
+
+> Scan this repository with Trustabl and summarise the high-severity findings.
+
+The agent calls `trustabl_scan` and replies with the severity table, the
+readiness score, and the findings. The first scan on a machine also downloads
+the scanner (~14 MB); later scans skip straight to scanning — around 20 seconds
+for a large repo.
+
+Other prompts that work well:
+
+> Scan `./services/agent` with Trustabl.
+>
+> Scan this repo with Trustabl, then fix the highest-severity finding.
+>
+> Scan with Trustabl using only the `mcp` and `claude_sdk` detectors.
+>
+> Show me the findings from the last Trustabl scan.   ← no re-scan
+
+Because findings come back as structured data with file paths and line numbers,
+the agent can jump straight to the code and propose fixes — ask it to fix what
+it found and it will.
+
+After a scan, three files land in the scanned directory:
+
+| File | Use |
+|---|---|
+| `trustabl.sarif` | Open with a SARIF viewer extension to see findings inline on your code. |
+| `trustabl.json` | Full machine-readable results — every finding, not just the ones shown in chat. |
+| `trustabl-report.txt` | The complete console report, ready to paste into a ticket. |
 
 ## Tools
 
@@ -97,15 +158,6 @@ Both optional, set in Cursor's plugin settings:
 `TRUSTABL_BIN` (env) forces a specific binary — useful if you already have
 `trustabl` installed somewhere non-standard.
 
-## Try it
-
-Ask the agent:
-
-> Scan this repository with Trustabl and summarise the high-severity findings.
-
-Then open `trustabl.sarif` with a SARIF viewer extension to browse the findings
-inline in your code.
-
 ## Development
 
 ```bash
@@ -127,9 +179,14 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 ## Troubleshooting
 
-**The tools don't appear in Cursor.** Check Cursor's MCP logs for the `trustabl`
-server. If the launch path failed to resolve, replace `${PLUGIN_ROOT}` in
-`mcp.json` with an absolute path to `dist/index.js`.
+**The tools don't appear in Cursor.** Open **Customize → Trustabl Cursor →
+Configure → Show Output** to see why the server exited. If the error is
+`Cannot find module '...${PLUGIN_ROOT}...'`, your Cursor build doesn't expand
+that variable — replace `cwd` in `mcp.json` with an absolute path to the plugin
+folder.
+
+**Changed something and the fix didn't take.** MCP servers don't hot-reload:
+**Configure → Reload** (or restart Cursor) after editing the plugin.
 
 **"Could not resolve the latest trustabl release."** GitHub rate-limited the
 anonymous API call — set `GITHUB_TOKEN`, or pin `TRUSTABL_VERSION` to a tag.
