@@ -1,0 +1,22 @@
+{
+  "name": "trustabl-cursor",
+  "version": "0.1.0",
+  "description": "MCP server that runs the Trustabl AI-agent safety & reliability scanner",
+  "type": "module",
+  "bin": {
+    "trustabl-cursor": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trustabl/trustabl-cursor.git"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -7,8 +7,14 @@
   },
   "homepage": "https://trustabl.ai",
   "repository": "https://github.com/trustabl/trustabl-cursor",
-  "keywords": ["security", "ai-agents", "sarif", "scanner", "mcp", "code-review"],
-  "mcpServers": "mcp.json",
+  "keywords": [
+    "security",
+    "ai-agents",
+    "sarif",
+    "scanner",
+    "mcp",
+    "code-review"
+  ],
   "variables": {
     "type": "object",
     "properties": {
@@ -24,5 +30,6 @@
         "description": "Only used to download the trustabl release binary. Avoids GitHub's 60-requests/hour anonymous rate limit."
       }
     }
-  }
+  },
+  "mcpServers": "mcp.json"
 }

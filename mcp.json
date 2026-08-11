@@ -1,9 +1,8 @@
 {
   "mcpServers": {
     "trustabl": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "${PLUGIN_ROOT}",
+      "command": "npx",
+      "args": ["-y", "github:trustabl/trustabl-cursor"],
       "env": {
         "TRUSTABL_VERSION": "${TRUSTABL_VERSION}",
         "GITHUB_TOKEN": "${GITHUB_TOKEN}"
