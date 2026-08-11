@@ -1,5 +1,5 @@
 {
-  "name": "trustabl-cursor",
+  "name": "trustabl",
   "description": "Bring Trustabl's AI-agent safety & reliability scanner into Cursor — scan your agents, tools, and MCP servers, get a production-readiness score with severity-ranked findings, and fix issues before they ship.",
   "version": "0.1.0",
   "author": {
