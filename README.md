@@ -16,7 +16,7 @@ Pydantic AI, Vercel AI, AutoGen, MCP servers, and Claude subagents & skills.
 
 ```mermaid
 flowchart TD
-    U["You<br/><i>&quot;scan this repo with Trustabl&quot;</i>"] --> A["Cursor Agent"]
+    U["You <br/><i>&quot;scan this repo with Trustabl&quot;</i>"] --> A["Cursor Agent"]
     A -->|"MCP tool call<br/>trustabl_scan"| S["Trustabl MCP server<br/><code>dist/index.js</code> · stdio"]
 
     S --> B{"trustabl binary<br/>available?"}
