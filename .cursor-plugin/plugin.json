@@ -1,0 +1,28 @@
+{
+  "name": "trustabl-cursor",
+  "description": "Bring Trustabl's AI-agent safety & reliability scanner into Cursor — scan your agents, tools, and MCP servers, get a production-readiness score with severity-ranked findings, and fix issues before they ship.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Trustabl"
+  },
+  "homepage": "https://trustabl.ai",
+  "repository": "https://github.com/trustabl/trustabl-cursor",
+  "keywords": ["security", "ai-agents", "sarif", "scanner", "mcp", "code-review"],
+  "mcpServers": "mcp.json",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "TRUSTABL_VERSION": {
+        "type": "string",
+        "title": "Trustabl version",
+        "description": "Release tag to run (e.g. v0.1.6), or 'latest'.",
+        "default": "latest"
+      },
+      "GITHUB_TOKEN": {
+        "type": "string",
+        "title": "GitHub token (optional)",
+        "description": "Only used to download the trustabl release binary. Avoids GitHub's 60-requests/hour anonymous rate limit."
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+Trustabl Cursor Plugin — Proprietary License
+Copyright (c) 2026 Trustabl. All rights reserved.
+
+This repository and all files within it (the "Plugin") are the proprietary
+and confidential property of Trustabl ("Licensor"). The Plugin is made
+available for the sole purpose of enabling use of the Trustabl scanner within
+the Cursor editor. It is NOT open source.
+
+1. License Grant.
+   Subject to your compliance with these terms, Licensor grants you a limited,
+   non-exclusive, non-transferable, non-sublicensable, revocable license to
+   install the Plugin in Cursor and to invoke its tools, solely to run Trustabl
+   scans on code you are authorized to scan.
+
+2. Restrictions.
+   Except as expressly permitted in Section 1, you may NOT, in whole or in part:
+   (a) copy, fork, mirror, or otherwise reproduce the Plugin, except for the
+       copy Cursor itself makes to install and execute it;
+   (b) modify, adapt, translate, or create derivative works of the Plugin,
+       except for setting the documented configuration variables described in
+       the README;
+   (c) redistribute, publish, sublicense, sell, rent, lease, host, or otherwise
+       make the Plugin (or any part of it) available to any third party,
+       whether standalone or as part of another offering;
+   (d) remove, obscure, or alter any copyright, trademark, or other proprietary
+       notice;
+   (e) reverse engineer, decompile, or disassemble any binary, container image,
+       or other artifact the Plugin downloads or invokes, except to the extent
+       this restriction is prohibited by applicable law.
+
+3. Ownership.
+   The Plugin is licensed, not sold. Licensor retains all right, title, and
+   interest in and to the Plugin, including all related intellectual property
+   rights. No rights are granted to you except as expressly stated in this
+   License.
+
+4. Third-Party Components.
+   The Plugin bundles third-party open-source software, which remains subject to
+   its own license terms. The Trustabl scanner binary the Plugin downloads is
+   distributed separately under the Apache License 2.0.
+
+5. No Warranty.
+   THE PLUGIN IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF ANY
+   KIND, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+   NON-INFRINGEMENT.
+
+6. Limitation of Liability.
+   IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM,
+   OUT OF, OR IN CONNECTION WITH THE PLUGIN OR THE USE OR OTHER DEALINGS IN
+   THE PLUGIN.
+
+7. Termination.
+   This License terminates automatically, without notice, if you breach any of
+   its terms. Upon termination you must immediately cease all use of the Plugin
+   and destroy any copies in your possession or control.
+
+8. Reservation of Rights.
+   All rights not expressly granted herein are reserved by Licensor.
+
+For licensing inquiries, contact: legal@trustabl.ai

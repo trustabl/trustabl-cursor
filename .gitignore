@@ -1,0 +1,5 @@
+node_modules/
+
+# Scan output, if you run the scanner against this repo itself.
+trustabl.sarif
+trustabl.json
