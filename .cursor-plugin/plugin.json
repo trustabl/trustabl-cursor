@@ -1,7 +1,7 @@
 {
   "name": "trustabl",
   "description": "Bring Trustabl's AI-agent safety & reliability scanner into Cursor — scan your agents, tools, and MCP servers, get a production-readiness score with severity-ranked findings, and fix issues before they ship.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Trustabl"
   },
@@ -9,12 +9,20 @@
   "homepage": "https://trustabl.ai",
   "repository": "https://github.com/trustabl/trustabl-cursor",
   "keywords": [
-    "security",
+    "agent-reliability",
     "ai-agents",
+    "autofix",
+    "code-review",
+    "reliability",
+    "security",
     "sarif",
     "scanner",
     "mcp",
-    "code-review"
+    "static-analysis",
+    "langchain",
+    "crewai",
+    "claude-agent-sdk",
+    "openai-agents-sdk"
   ],
   "variables": {
     "type": "object",
