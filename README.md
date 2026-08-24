@@ -1,7 +1,7 @@
 # Trustabl for Cursor
 
-Bring [Trustabl](https://github.com/trustabl/trustabl) — the static reliability &
-safety scanner for AI-agent codebases — into Cursor.
+Bring [Trustabl](https://github.com/trustabl/trustabl) — the agent reliability
+scanner for AI-agent codebases — into Cursor.
 
 The plugin adds an **MCP server** whose tools the Cursor agent can call. Ask it to
 "scan this repo with Trustabl" and it inventories your agents, tools, and MCP
