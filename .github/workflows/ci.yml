@@ -1,0 +1,54 @@
+name: CI
+
+# dist/index.js is committed and package.json "bin" points straight at it, so a
+# stale bundle ships a broken plugin to everyone who installs from
+# cursor.directory. Nothing else in this repo catches that, which is what this
+# workflow is for.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install
+        working-directory: server
+        run: npm ci
+
+      - name: Rebuild the bundle
+        working-directory: server
+        run: npm run build
+
+      # On a clean checkout a rebuild must be a no-op. If it is not, someone
+      # edited server/ without rebuilding dist/, and the committed bundle does
+      # not match the source it claims to be built from.
+      - name: dist/ must match server/
+        run: |
+          if ! git diff --exit-code -- dist/index.js; then
+            echo "::error::dist/index.js is stale. Run 'npm run build' in server/ and commit the result."
+            exit 1
+          fi
+
+      # Boot the bundle the way Cursor does — over stdio — and confirm it
+      # answers an MCP handshake. Catches a bundle that builds but cannot start.
+      - name: MCP server answers initialize
+        run: |
+          req='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}'
+          out=$(printf '%s\n' "$req" | timeout 20 node dist/index.js || true)
+          printf '%s\n' "$out"
+          printf '%s' "$out" | grep -q '"result"' || {
+            echo "::error::no result from initialize - the server did not complete an MCP handshake"
+            exit 1
+          }
