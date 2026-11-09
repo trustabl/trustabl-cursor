@@ -1,0 +1,117 @@
+# Opens a pull request when trustabl publishes a release newer than the one the
+# plugin pins as its TRUSTABL_VERSION default.
+#
+# The default is pinned so a trustabl release cannot change users' results by
+# itself. The cost of a pin is remembering to move it; this workflow does the
+# remembering. Nothing changes until a human merges the pull request.
+#
+# Needs Settings -> Actions -> General -> "Allow GitHub Actions to create and
+# approve pull requests". Pull requests opened with GITHUB_TOKEN do not trigger
+# other workflows, so close and reopen the pull request to run CI on it.
+name: engine-bump
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'     # Mondays, 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT=$(sed -n 's/^export const DEFAULT_VERSION = "\(.*\)";$/\1/p' server/trustabl-bin.js)
+          LATEST=$(gh api repos/trustabl/agent-reliability-analyzer/releases/latest --jq .tag_name)
+          if [ -z "$CURRENT" ] || [ -z "$LATEST" ]; then
+            echo "::error::could not read the pinned ($CURRENT) or latest ($LATEST) trustabl version"
+            exit 1
+          fi
+          NEWEST=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -n1)
+          BUMP=false
+          if [ "$CURRENT" != "$LATEST" ] && [ "$NEWEST" = "$LATEST" ]; then BUMP=true; fi
+          {
+            echo "current=$CURRENT"
+            echo "latest=$LATEST"
+            echo "bump=$BUMP"
+          } >> "$GITHUB_OUTPUT"
+          echo "Pinned $CURRENT, latest $LATEST, bump: $BUMP"
+
+      # The plugin refuses to run a binary it cannot verify, so a pin to a release
+      # without a complete checksums.txt would break every default scan.
+      - name: Check the release is verifiable
+        if: steps.versions.outputs.bump == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST: ${{ steps.versions.outputs.latest }}
+        run: |
+          gh release download "$LATEST" -R trustabl/agent-reliability-analyzer \
+            -p checksums.txt -O "$RUNNER_TEMP/checksums.txt"
+          V="${LATEST#v}"
+          for asset in "trustabl_${V}_linux_amd64.tar.gz" "trustabl_${V}_linux_arm64.tar.gz" \
+                       "trustabl_${V}_darwin_amd64.tar.gz" "trustabl_${V}_darwin_arm64.tar.gz" \
+                       "trustabl_${V}_windows_amd64.zip"; do
+            if ! awk -v a="$asset" '$2 == a { found = 1 } END { exit !found }' "$RUNNER_TEMP/checksums.txt"; then
+              echo "::error::$asset is not listed in checksums.txt for $LATEST"
+              exit 1
+            fi
+          done
+
+      - name: Move the pin
+        if: steps.versions.outputs.bump == 'true'
+        env:
+          CURRENT: ${{ steps.versions.outputs.current }}
+          LATEST: ${{ steps.versions.outputs.latest }}
+        run: |
+          OLD=$(printf '%s' "$CURRENT" | sed 's/\./\\./g')
+          sed -i "s/${OLD}\b/${LATEST}/g" server/trustabl-bin.js .cursor-plugin/plugin.json README.md
+          grep -q "^export const DEFAULT_VERSION = \"${LATEST}\";$" server/trustabl-bin.js
+          grep -q "\"default\": \"${LATEST}\"" .cursor-plugin/plugin.json
+
+      # dist/index.js is what Cursor runs, so rebuild it from the bumped source.
+      - uses: actions/setup-node@v4
+        if: steps.versions.outputs.bump == 'true'
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Rebuild the bundle
+        if: steps.versions.outputs.bump == 'true'
+        working-directory: server
+        run: |
+          npm ci
+          npm run build
+
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.versions.outputs.bump == 'true'
+        with:
+          branch: chore/engine-${{ steps.versions.outputs.latest }}
+          title: "chore: default to trustabl ${{ steps.versions.outputs.latest }}"
+          commit-message: "chore: default to trustabl ${{ steps.versions.outputs.latest }}"
+          body: |
+            trustabl released `${{ steps.versions.outputs.latest }}`; the plugin pins
+            `${{ steps.versions.outputs.current }}` as its `TRUSTABL_VERSION` default.
+
+            This moves the default in `server/trustabl-bin.js`, `.cursor-plugin/plugin.json`
+            and the README, and rebuilds `dist/index.js`. The release's `checksums.txt`
+            lists every platform asset the plugin downloads.
+
+            Before merging:
+            - Read the trustabl release notes. A release that changes scan output may need
+              server changes in the same pull request.
+            - Bump the plugin's own version (`.cursor-plugin/plugin.json`, `package.json`,
+              `server/package.json`, `server/package-lock.json`, `server/index.js`) in
+              this pull request if the listing should pick up the new manifest default.
+            - Close and reopen this pull request so CI runs on it.
+
+            Cursor launches the MCP server from this repository's default branch
+            (`npx github:trustabl/trustabl-cursor`), so merging is what ships it. No tag
+            is involved.

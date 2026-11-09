@@ -21163,6 +21163,7 @@ import path from "node:path";
 var REPO = "trustabl/agent-reliability-analyzer";
 var log = (msg) => process.stderr.write(`[trustabl] ${msg}
 `);
+var DEFAULT_VERSION = "v0.1.16";
 var setting = (value) => {
   const v = value?.trim();
   return v && !/^\$\{[^}]*\}$/.test(v) ? v : void 0;
@@ -21193,13 +21194,14 @@ function existingBinary() {
   return null;
 }
 async function resolveVersion(requested) {
-  if (requested && requested !== "latest") return requested;
+  const version2 = requested || DEFAULT_VERSION;
+  if (version2 !== "latest") return version2;
   const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
     headers: ghHeaders()
   });
   if (!res.ok) {
     throw new Error(
-      `Could not resolve the latest trustabl release (HTTP ${res.status}). Set TRUSTABL_VERSION to a tag (e.g. v0.1.6), or set GITHUB_TOKEN if you are rate-limited.`
+      `Could not resolve the latest trustabl release (HTTP ${res.status}). Set TRUSTABL_VERSION to a tag (e.g. ${DEFAULT_VERSION}) or unset it, or set GITHUB_TOKEN if you are rate-limited.`
     );
   }
   const tag = (await res.json()).tag_name;
@@ -21316,7 +21318,7 @@ function maxSeverity(findings) {
     "none"
   );
 }
-var server = new McpServer({ name: "trustabl", version: "0.1.0" });
+var server = new McpServer({ name: "trustabl", version: "0.2.0" });
 server.registerTool(
   "trustabl_scan",
   {

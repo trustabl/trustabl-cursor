@@ -1,7 +1,7 @@
 {
   "name": "trustabl",
   "description": "Bring Trustabl's AI-agent safety & reliability scanner into Cursor — scan your agents, tools, and MCP servers, get a production-readiness score with severity-ranked findings, and fix issues before they ship.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Trustabl"
   },
@@ -22,8 +22,8 @@
       "TRUSTABL_VERSION": {
         "type": "string",
         "title": "Trustabl version",
-        "description": "Release tag to run (e.g. v0.1.6), or 'latest'.",
-        "default": "latest"
+        "description": "Release tag to run (e.g. v0.1.16), or 'latest' for the newest release. Defaults to the release this plugin is pinned to.",
+        "default": "v0.1.16"
       },
       "GITHUB_TOKEN": {
         "type": "string",

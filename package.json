@@ -1,6 +1,6 @@
 {
   "name": "trustabl-cursor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server that runs the Trustabl AI-agent safety & reliability scanner",
   "type": "module",
   "bin": {
