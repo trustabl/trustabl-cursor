@@ -17,6 +17,14 @@ const REPO = "trustabl/agent-reliability-analyzer";
 const log = (msg) => process.stderr.write(`[trustabl] ${msg}\n`);
 
 /**
+ * The release to run when TRUSTABL_VERSION is not set. Pinned rather than
+ * "latest" so a new release cannot change scan results until this pin moves
+ * (engine-bump.yml opens that pull request). Keep it equal to the
+ * TRUSTABL_VERSION default in .cursor-plugin/plugin.json.
+ */
+export const DEFAULT_VERSION = "v0.1.16";
+
+/**
  * Optional settings arrive as ${VAR} placeholders that the host substitutes.
  * A host that leaves an unset one unsubstituted would hand us the literal
  * "${TRUSTABL_VERSION}" — treat that as "not set" rather than as a version tag.
@@ -60,14 +68,15 @@ function existingBinary() {
 }
 
 async function resolveVersion(requested) {
-  if (requested && requested !== "latest") return requested;
+  const version = requested || DEFAULT_VERSION;
+  if (version !== "latest") return version;
   const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
     headers: ghHeaders(),
   });
   if (!res.ok) {
     throw new Error(
       `Could not resolve the latest trustabl release (HTTP ${res.status}). ` +
-        `Set TRUSTABL_VERSION to a tag (e.g. v0.1.6), or set GITHUB_TOKEN if you are rate-limited.`
+        `Set TRUSTABL_VERSION to a tag (e.g. ${DEFAULT_VERSION}) or unset it, or set GITHUB_TOKEN if you are rate-limited.`
     );
   }
   const tag = (await res.json()).tag_name;

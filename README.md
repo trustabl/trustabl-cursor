@@ -186,11 +186,25 @@ Both optional, set in Cursor's plugin settings:
 
 | Variable | Default | Description |
 |---|---|---|
-| `TRUSTABL_VERSION` | `latest` | Release tag to run, e.g. `v0.1.6`. Pin it for reproducible results. |
+| `TRUSTABL_VERSION` | `v0.1.16` | Release tag to run (with the `v`), or `latest` for the newest release. See below. |
 | `GITHUB_TOKEN` | _(none)_ | Only used to download the release binary; avoids GitHub's 60-requests/hour anonymous limit. |
 
 `TRUSTABL_BIN` (env) forces a specific binary — useful if you already have
 `trustabl` installed somewhere non-standard.
+
+### Engine version
+
+By default the plugin downloads one exact trustabl release, `v0.1.16`, checks
+its sha256 against that release's `checksums.txt`, and caches it under
+`~/.trustabl-cursor/<version>/`. A new trustabl release does not change your
+results until this plugin moves the pin; each move is a reviewed pull request.
+
+- Keep the default: leave `TRUSTABL_VERSION` unset.
+- Always run the newest release: `TRUSTABL_VERSION=latest` (the default before the pin).
+- Run a specific release: `TRUSTABL_VERSION=v0.1.15`.
+
+A `trustabl` already on your `PATH`, or one named by `TRUSTABL_BIN`, is used as
+is, whatever its version.
 
 ## Development
 
@@ -222,8 +236,9 @@ folder.
 **Changed something and the fix didn't take.** MCP servers don't hot-reload:
 **Configure → Reload** (or restart Cursor) after editing the plugin.
 
-**"Could not resolve the latest trustabl release."** GitHub rate-limited the
-anonymous API call — set `GITHUB_TOKEN`, or pin `TRUSTABL_VERSION` to a tag.
+**"Could not resolve the latest trustabl release."** Only happens with
+`TRUSTABL_VERSION=latest`: GitHub rate-limited the anonymous API call. Set
+`GITHUB_TOKEN`, or set `TRUSTABL_VERSION` to a tag (or unset it for the default).
 
 **Windows.** Supported (amd64). The release `.zip` is unpacked with PowerShell's
 `Expand-Archive`; macOS and Linux use `tar`.
