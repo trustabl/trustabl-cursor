@@ -85,7 +85,7 @@ function maxSeverity(findings) {
   );
 }
 
-const server = new McpServer({ name: "trustabl", version: "0.1.1" });
+const server = new McpServer({ name: "trustabl", version: "0.2.0" });
 
 server.registerTool(
   "trustabl_scan",

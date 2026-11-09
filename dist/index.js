@@ -21318,7 +21318,7 @@ function maxSeverity(findings) {
     "none"
   );
 }
-var server = new McpServer({ name: "trustabl", version: "0.1.1" });
+var server = new McpServer({ name: "trustabl", version: "0.2.0" });
 server.registerTool(
   "trustabl_scan",
   {
